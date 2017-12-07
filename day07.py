@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Dict, Set
+from typing import Iterable, List, Optional, Dict, Set, Tuple
 import re
 
 
@@ -20,14 +20,14 @@ class Node:
                                             for c in self.children)
         return self._total
 
-    def correct_weight(self, target_weight: int=0) -> Optional[int]:
+    def balance(self, target_weight: int=0) -> Optional[Tuple['Node', int]]:
         distinct = find_different(self.children)
         if distinct:
-            return distinct.correct_weight(next(c.total_weight
-                                           for c in self.children
-                                           if c != distinct))
+            return distinct.balance(next(c.total_weight
+                                         for c in self.children
+                                         if c != distinct))
         elif target_weight:
-            return self.weight - (self.total_weight - target_weight)
+            return self, self.total_weight - target_weight
         else:
             return None
 
@@ -90,8 +90,10 @@ gyxo (61)
 cntj (57)
 '''
 test = parse(test_data.splitlines())
+bad, delta = test.balance()
 assert test.name == 'tknk'
-assert test.correct_weight() == 60
+assert bad.weight - delta == 60
 with open('input07') as f:
     root = parse(f.readlines())
-    print(root.name, root.correct_weight())
+    answer, delta = root.balance()
+    print(root.name, answer.name, answer.weight - delta)
