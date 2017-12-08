@@ -33,6 +33,8 @@ class Node:
 
 
 def find_different(xs: List[Node]) -> Optional[Node]:
+    if len(xs) == 2 and xs[0] != xs[1]:
+        raise ValueError('flip a coin.')
     if len(xs) < 3:
         return None
     a, b, c, *rest = xs

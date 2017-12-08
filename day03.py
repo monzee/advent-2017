@@ -18,14 +18,11 @@ print(solve(277678))
 
 
 def solve2(floor, grid={(0, 0): 1}):
-    current = 1
-    coords = spiral_path()
-    while current <= floor:
-        p = next(coords)
-        if p not in grid:
-            grid[p] = sum(grid.get(q, 0) for q in neighbors(*p))
-        current = grid[p]
-    return current
+    for p in spiral_path():
+        value = grid.get(p, None) or sum(grid.get(q, 0) for q in neighbors(*p))
+        grid[p] = value
+        if value > floor:
+            return value
 
 
 def spiral_path(radius=1):
