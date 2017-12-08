@@ -1,14 +1,15 @@
 from typing import NamedTuple, Callable, Iterable, Dict, Tuple
 import re
 import collections
-import operator
-from functools import partial
+import operator as op
+import functools as ft
 
 
 class Instruction(NamedTuple):
-    register: str
+    key: str
     cmd: Callable[[int], int]
-    pred: Tuple[str, Callable[[int], bool]]
+    cmp_key: str
+    pred: Callable[[int], bool]
 
 
 def parse(lines: Iterable[str]) -> Iterable[Instruction]:
@@ -19,38 +20,35 @@ def parse(lines: Iterable[str]) -> Iterable[Instruction]:
         match = pattern.match(line)
         if not match:
             continue
-        cmd = match.group(2)
         by = int(match.group(3))
-        if cmd == 'inc':
-            cmd = partial(operator.add, by)
+        if match.group(2) == 'inc':
+            cmd = ft.partial(op.add, by)
         else:
-            cmd = partial(operator.add, -by)
+            cmd = ft.partial(op.add, -by)
         left = match.group(4)
-        cmp = match.group(5)
+        comparator = match.group(5)
         right = int(match.group(6))
-        if cmp == '<':
-            pred = (left, partial(operator.gt, right))
-        elif cmp == '>':
-            pred = (left, partial(operator.lt, right))
-        elif cmp == '==':
-            pred = (left, partial(operator.eq, right))
-        elif cmp == '!=':
-            pred = (left, partial(operator.ne, right))
-        elif cmp == '<=':
-            pred = (left, partial(operator.ge, right))
-        elif cmp == '>=':
-            pred = (left, partial(operator.le, right))
-        yield Instruction(match.group(1), cmd, pred)
+        if comparator == '<':
+            pred = ft.partial(op.gt, right)
+        elif comparator == '>':
+            pred = ft.partial(op.lt, right)
+        elif comparator == '==':
+            pred = ft.partial(op.eq, right)
+        elif comparator == '!=':
+            pred = ft.partial(op.ne, right)
+        elif comparator == '<=':
+            pred = ft.partial(op.ge, right)
+        elif comparator == '>=':
+            pred = ft.partial(op.le, right)
+        yield Instruction(match.group(1), cmd, left, pred)
 
 
 def exec(program: Iterable[Instruction]) -> Dict[str, int]:
     registers: Dict[str, int] = collections.defaultdict(int)
     for instr in program:
-        left, pred = instr.pred
-        if pred(registers[left]):
-            e = registers[instr.register]
-            result = instr.cmd(e)
-            registers[instr.register] = result
+        if instr.pred(registers[instr.cmp_key]):
+            result = instr.cmd(registers[instr.key])
+            registers[instr.key] = result
             registers[''] = max(result, registers[''])
     return registers
 
